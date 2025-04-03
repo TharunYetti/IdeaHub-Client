@@ -1,12 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-hot-toast";
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState(""); // Only for Sign-Up
+  const [username, setUsername] = useState(""); // Only for Sign-Up
   const [error, setError] = useState("");
+
+  const navigate = useNavigate();
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -14,16 +18,22 @@ const Auth = () => {
 
     try {
       const url = isSignUp
-        ? "http://localhost:7777/api/auth/signup"
-        : "http://localhost:7777/api/auth/login";
+        ? "http://localhost:8080/api/auth/register"
+        : "http://localhost:8080/api/auth/login";
 
-      const payload = isSignUp ? { name, email, password } : { email, password };
+      const payload = isSignUp ? { username, email, password } : { email, password };
 
-      const response = await axios.post(url, payload);
+      const response = await axios.post(url, payload, {
+        headers: { "Content-Type": "application/json" },withCredentials:true});
       console.log(`${isSignUp ? "Sign-Up" : "Login"} Success:`, response.data);
-      alert(`${isSignUp ? "Sign-Up" : "Login"} Successful!`);
+      setUsername(""); setEmail(""); setPassword(""); 
+      localStorage.setItem("token", response.data);
+      // alert(`${isSignUp ? "Sign-Up" : "Login"} Successful!`);
+      toast.success(`${ isSignUp ? "Registered successfully, Please login" : "Logged In Successfully!"}`, {duration:2000, position:"top-right"});
+      navigate("/");
     } catch (err) {
       console.error(`${isSignUp ? "Sign-Up" : "Login"} Failed:`, err.response?.data || err.message);
+      toast.error(`${isSignUp ? "Sign-Up" : "Login"} Failed: ${err.response?.data || err.message}`);
       setError(err.response?.data?.message || `${isSignUp ? "Sign-Up" : "Login"} failed`);
     }
   };
@@ -38,11 +48,11 @@ const Auth = () => {
         <form onSubmit={handleAuth} className="mt-6">
           {isSignUp && (
             <div className="mb-4">
-              <label className="block text-gray-300">Name</label>
+              <label className="block text-gray-300">Username</label>
               <input
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full p-3 mt-1 bg-[#0B0C10] border border-gray-500 rounded focus:border-[#66FCF1] outline-none"
                 required
               />
